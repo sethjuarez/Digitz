@@ -1,0 +1,36 @@
+﻿<Page
+    x:Class="Digitz.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Digitz"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="47" />
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <CommandBar Name="myCommandBar" IsOpen="True" Grid.Row="0" Height="47">
+            <AppBarButton Icon="Camera" Click="CameraButton_Click" />
+            <CommandBar.Content>
+                <InkToolbar x:Name="inkyTools"
+                        InitialControls="None"
+                        TargetInkCanvas="{x:Bind inky}">
+                    <InkToolbarBallpointPenButton SelectedStrokeWidth="15" />
+                    <InkToolbarEraserButton />
+                </InkToolbar>
+            </CommandBar.Content>
+        </CommandBar>
+        <StackPanel Grid.Row="1" HorizontalAlignment="Center">
+            <StackPanel BorderBrush="DarkSlateGray" BorderThickness="4" >
+                <InkCanvas x:Name="inky" Width="500" Height="500" />
+            </StackPanel>
+            <TextBlock HorizontalAlignment="Center">ksjhwkjhwekjh</TextBlock>
+        </StackPanel>
+    </Grid>
+</Page>
