@@ -35,3 +35,5 @@ __pycache__
 *.checkpoint
 *.tfevents.*
 input/*_cntk_text.txt
+model/
+logs/
