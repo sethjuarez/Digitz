@@ -2,6 +2,7 @@
 import sys
 import os
 import tensorflow as tf
+from tensorflow.python.tools import freeze_graph as freeze
 from tensorflow.examples.tutorials.mnist import input_data
 from datetime import *
 
@@ -26,7 +27,7 @@ def main(_):
 
     # Parameters
     learning_rate = 0.01
-    training_epochs = 50
+    training_epochs = 10
     batch_size = 100
     display_epoch = 1
     unique = datetime.now().strftime('%m-%d_%H_%M')
@@ -40,15 +41,16 @@ def main(_):
     y = tf.placeholder(tf.float32, [None, 10], name='LabelData')
 
     # Set model weights
-    W = tf.Variable(tf.zeros([784, 10]), name='Weights')
-    b = tf.Variable(tf.zeros([10]), name='Bias')
+    W = tf.Variable(tf.zeros([784, 10]), name='weights')
+    b = tf.Variable(tf.zeros([10]), name='bias')
 
     # Construct model and encapsulating all ops into scopes, making
     # Tensorboard's Graph visualization more convenient
     with tf.name_scope('Model'):
         # Model
-        #pred = tf.nn.softmax(tf.matmul(x, W) + b) # Softmax
-        pred = tf.matmul(x, W) + b # Softmax
+        #pred = tf.nn.softmax(tf.matmul(x, W) + b, name="model") # Softmax
+        pred = tf.add(tf.matmul(x, W), b, name="linear")  # linear combination
+
     with tf.name_scope('Loss'):
         # Minimize error using cross entropy
         # cost = tf.reduce_mean(-tf.reduce_sum(y * tf.log(pred), reduction_indices=1))
@@ -112,16 +114,29 @@ def main(_):
         print("Accuracy:", acc.eval({x: mnist.test.images, y: mnist.test.labels}))
     
         # saving model
-        builder = tf.saved_model.builder.SavedModelBuilder(export_path)
-        builder.add_meta_graph_and_variables(
-            sess,
-            [tf.saved_model.tag_constants.SERVING],
-            signature_def_map = {
-                "model": tf.saved_model.signature_def_utils.predict_signature_def(
-                    inputs = { "x": x },
-                    outputs = { "prediction": pred })
-        })
-        builder.save()
+        checkpoint = os.path.join(export_path, "model.ckpt")
+        saver = tf.train.Saver()
+        # checkpoint - variables
+        saver.save(sess, checkpoint)
+        # graph
+        tf.train.write_graph(sess.graph_def, export_path, "model.pb", as_text=False)
+        # freeze
+        # python "Python\Lib\site-packages\tensorflow\python\tools\freeze_graph.py" --input_graph=.\Profile.pb --input_checkpoint=.\Profile.ckpt --output_node_names=Output/Predictions,Output/Loss --output_graph=frozen.pb 
+        g = os.path.join(export_path, "model.pb")
+        frozen = os.path.join(export_path, "frozen.pb")
+        
+        freeze.freeze_graph(
+            input_graph = g, 
+            input_saver = "", 
+            input_binary = True, 
+            input_checkpoint = checkpoint, 
+            output_node_names = "Model/linear",
+            restore_op_name = "",
+            filename_tensor_name = "",
+            output_graph = frozen,
+            clear_devices = True,
+            initializer_nodes = ""
+        )
         print("Model saved!")
     exit(0)
 
