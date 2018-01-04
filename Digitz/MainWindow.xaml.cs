@@ -58,7 +58,6 @@ namespace Digitz
         {
             var tensor = GetWrittenDigit(28);
             string modelFile = "saved_model.pb";
-
             var model = File.ReadAllBytes(modelFile);
             var graph = new TFGraph();
             graph.Import(model);

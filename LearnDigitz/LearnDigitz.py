@@ -26,7 +26,7 @@ def main(_):
 
     # Parameters
     learning_rate = 0.01
-    training_epochs = 10
+    training_epochs = 50
     batch_size = 100
     display_epoch = 1
     unique = datetime.now().strftime('%m-%d_%H_%M')
@@ -113,10 +113,14 @@ def main(_):
     
         # saving model
         builder = tf.saved_model.builder.SavedModelBuilder(export_path)
-        builder.add_meta_graph_and_variables(sess, 
-                                             [tf.saved_model.tag_constants.SERVING], 
-                                             signature_def_map=None,
-                                             assets_collection=None)
+        builder.add_meta_graph_and_variables(
+            sess,
+            [tf.saved_model.tag_constants.SERVING],
+            signature_def_map = {
+                "model": tf.saved_model.signature_def_utils.predict_signature_def(
+                    inputs = { "x": x },
+                    outputs = { "prediction": pred })
+        })
         builder.save()
         print("Model saved!")
     exit(0)
