@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -56,7 +57,11 @@ namespace Digitz
         private void recognizeButton_Click(object sender, RoutedEventArgs e)
         {
             var tensor = GetWrittenDigit(28);
-            
+            string modelFile = "saved_model.pb";
+
+            var model = File.ReadAllBytes(modelFile);
+            var graph = new TFGraph();
+            graph.Import(model);
         }
 
         private string Stringify(float[] data)
