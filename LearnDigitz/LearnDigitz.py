@@ -87,12 +87,67 @@ def softmax_model(x):
         pred = tf.nn.softmax(tf.matmul(x, W) + b, name="model") # Softmax
     return pred
 
+def mlp_model(x):
+    return
+
+def cnn_model(x):
+    info_caller()
+    # Reshape to use within a convolutional neural net.
+    # Last dimension is for "features" - there is only one here, since images are
+    # grayscale -- it would be 3 for an RGB image, 4 for RGBA, etc.
+    with tf.name_scope('reshape'):
+        x_image = tf.reshape(x, [-1, 28, 28, 1])
+
+    # First convolutional layer - maps one grayscale image to 32 feature maps.
+    with tf.name_scope('conv1'):
+        W_conv1 = tf.Variable(tf.truncated_normal([5, 5, 1, 32], stddev=0.1))
+        b_conv1 = tf.Variable(tf.constant(0.1, shape=[32]))
+        conv1 = tf.nn.conv2d(x_image, W_conv1, strides=[1, 1, 1, 1], padding='SAME')
+        h_conv1 = tf.nn.relu(conv1 + b_conv1)
+
+    # Pooling layer - downsamples by 2X.
+    with tf.name_scope('pool1'):
+        h_pool1 = tf.nn.max_pool(h_conv1, ksize=[1, 2, 2, 1],
+                        strides=[1, 2, 2, 1], padding='SAME')
+
+    # Second convolutional layer -- maps 32 feature maps to 64.
+    with tf.name_scope('conv2'):
+        W_conv2 = tf.Variable(tf.truncated_normal([5, 5, 32, 64], stddev=0.1))
+        b_conv2 = tf.Variable(tf.constant(0.1, shape=[64]))
+        conv2 = tf.nn.conv2d(h_pool1, W_conv2, strides=[1, 1, 1, 1], padding='SAME')
+        h_conv2 = tf.nn.relu(conv2 + b_conv2)
+                    
+
+    # Second pooling layer.
+    with tf.name_scope('pool2'):
+        h_pool2 = tf.nn.max_pool(h_conv2, ksize=[1, 2, 2, 1],
+                        strides=[1, 2, 2, 1], padding='SAME')
+
+    # Fully connected layer 1 -- after 2 round of downsampling, our 28x28 image
+    # is down to 7x7x64 feature maps -- maps this to 1024 features.
+    with tf.name_scope('fc1'):
+        W_fc1 = tf.Variable(tf.truncated_normal([7 * 7 * 64, 1024], stddev=0.1))
+        b_fc1 = tf.Variable(tf.constant(0.1, shape=[1024]))
+
+        h_pool2_flat = tf.reshape(h_pool2, [-1, 7 * 7 * 64])
+        h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
+
+    # Map the 1024 features to 10 classes, one for each digit
+    with tf.name_scope('Model'):
+        W_fc2 = tf.Variable(tf.truncated_normal([1024, 10], stddev=0.1))
+        b_fc2 = tf.Variable(tf.constant(0.1, shape=[10]))
+        
+        y_conv = tf.add(tf.matmul(h_fc1, W_fc2), b_fc2, name="model")
+
+    return y_conv
+
+
 ###################################################################
 # Cost / Loss Functions                                           #
 ###################################################################
 def cross_entropy_loss(fn, y):
     info_caller()
-    with tf.name_scope('Loss'):
+    with tf.name_scope('loss'):
         # Minimize error using cross entropy
         cost = tf.reduce_mean(-tf.reduce_sum(y * tf.log(fn), reduction_indices=1))
     return cost
@@ -104,15 +159,22 @@ def builtin_cross_entropy_loss(fn, y):
         cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=fn))
     return cost
 
+def sparse_softmax_cross_entropy_loss(fn, y):
+    info_caller()
+    with tf.name_scope('loss'):
+        cost = tf.losses.sparse_softmax_cross_entropy(labels=y, logits=fn)
+        cost = tf.reduce_mean(cost)
+    return cost
+
 def squared_error_loss(fn, y):
     info_caller()
-    with tf.name_scope('Loss'):
+    with tf.name_scope('loss'):
         # Minimize error with *better* cross entropy
-        cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=fn))
+        cost = tf.reduce_mean(tf.pow(y - fn, 2))
     return cost
 
 def builtin_l2_loss(fn, y):
-    with tf.name_scope('Loss'):
+    with tf.name_scope('loss'):
         # Minimize error using squared error
         cost = tf.nn.l2_loss(y - fn)
     return cost
@@ -121,7 +183,7 @@ def builtin_l2_loss(fn, y):
 # Accuracy                                                        #
 ###################################################################
 def get_accuracy(fn, y):
-    with tf.name_scope('Accuracy'):
+    with tf.name_scope('accuracy'):
         acc = tf.equal(tf.argmax(fn, 1), tf.argmax(y, 1))
         acc = tf.reduce_mean(tf.cast(acc, tf.float32))
     return acc
@@ -131,7 +193,7 @@ def get_accuracy(fn, y):
 ###################################################################
 def sgd_optimizer(cost, lr):
     info_caller()
-    with tf.name_scope('SGD'):
+    with tf.name_scope('optimizer'):
         # Gradient Descent
         optimizer = tf.train.GradientDescentOptimizer(lr).minimize(cost)
     return optimizer
@@ -155,7 +217,6 @@ def train_model(optimizer, cost, accuracy, x, y, batch_size = 100, training_epoc
 
     # Initializing the variables
     init = tf.global_variables_initializer()
-
     with tf.Session() as sess:
         sess.run(init)
         # Training cycle
@@ -165,10 +226,9 @@ def train_model(optimizer, cost, accuracy, x, y, batch_size = 100, training_epoc
             # Loop over all batches
             for i in range(total_batch):
                 batch_xs, batch_ys = mnist.train.next_batch(batch_size)
-                # Run optimization op (backprop), cost op (to get loss value)
-                # and summary nodes
+                # Run optimization, cost, and summary
                 _, c, summary = sess.run([optimizer, cost, merged_summary_op],
-                                         feed_dict={x: batch_xs, y: batch_ys})
+                                          feed_dict={x: batch_xs, y: batch_ys})
                 # Write logs at every iteration
                 summary_writer.add_summary(summary, epoch * total_batch + i)
                 # Compute average loss
@@ -202,13 +262,13 @@ def main(_):
     y = tf.placeholder(tf.float32, [None, 10], name='label')
 
     # model
-    predictor = softmax_model(x)
+    predictor = cnn_model(x)
 
     # model accuracy
     accuracy = get_accuracy(predictor, y)
 
     # cost / loss
-    cost = cross_entropy_loss(predictor, y)
+    cost = builtin_cross_entropy_loss(predictor, y)
 
     # optimizer
     optimizer = sgd_optimizer(cost, learning_rate)
