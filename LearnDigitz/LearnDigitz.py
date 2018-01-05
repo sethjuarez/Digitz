@@ -7,69 +7,143 @@ from tensorflow.examples.tutorials.mnist import input_data
 from datetime import *
 
 ###################################################################
-# Variables                                                       #
-# When launching project or scripts from Visual Studio,           #
-# input_dir and output_dir are passed as arguments automatically. #
-# Users could set them from the project setting page.             #
+# Output Paths                                                    #
 ###################################################################
+unique = datetime.now().strftime('%m.%d_%h.%M')
+data_path = 'data'
+logs_path = os.path.join('logs', 'log_' + unique)
+export_path = os.path.join('model', 'model_' + unique)
 
-FLAGS = tf.app.flags.FLAGS
-tf.app.flags.DEFINE_string("input_dir", ".", "Input directory where training dataset and meta data are saved")
-tf.app.flags.DEFINE_string("output_dir", ".", "Output directory where output such as logs are saved.")
-tf.app.flags.DEFINE_string("log_dir", ".", "Model directory where final model files are saved.")
+###################################################################
+# Parameters                                                      #
+###################################################################
+learning_rate = 0.01
+training_epochs = 10
+batch_size = 100
+display_epoch = 1
 
-def main(_):
-    # clearing graph
-    tf.reset_default_graph()
-
-    # Import MINST data
-    mnist = input_data.read_data_sets("/tmp/data/", one_hot=True)
-
-    # Parameters
-    learning_rate = 0.01
-    training_epochs = 10
-    batch_size = 100
-    display_epoch = 1
-    unique = datetime.now().strftime('%m-%d_%H_%M')
-    logs_path = os.path.join('logs', unique)
-    export_path = os.path.join('model', unique)
-
-    # tf Graph Input
-    # mnist data image of shape 28*28=784
-    x = tf.placeholder(tf.float32, [None, 784], name='InputData')
-    # 0-9 digits recognition => 10 classes
-    y = tf.placeholder(tf.float32, [None, 10], name='LabelData')
-
-    # Set model weights
+###################################################################
+# Models                                                          #
+###################################################################
+def linear_model(x):
+    # set model weights
     W = tf.Variable(tf.zeros([784, 10]), name='weights')
     b = tf.Variable(tf.zeros([10]), name='bias')
 
-    # Construct model and encapsulating all ops into scopes, making
-    # Tensorboard's Graph visualization more convenient
+    # scope for tensorboard
     with tf.name_scope('Model'):
-        # Model
-        #pred = tf.nn.softmax(tf.matmul(x, W) + b, name="model") # Softmax
-        pred = tf.add(tf.matmul(x, W), b, name="linear")  # linear combination
+        pred = tf.add(tf.matmul(x, W), b, name="model")  # linear combination
+    return pred
 
+def softmax_model(x):
+    # set model weights
+    W = tf.Variable(tf.zeros([784, 10]), name='weights')
+    b = tf.Variable(tf.zeros([10]), name='bias')
+
+    # scope for tensorboard
+    with tf.name_scope('Model'):
+        pred = tf.nn.softmax(tf.matmul(x, W) + b, name="model") # Softmax
+    return pred
+
+###################################################################
+# Cost / Loss Functions                                           #
+###################################################################
+def cross_entropy_loss(fn, y):
     with tf.name_scope('Loss'):
         # Minimize error using cross entropy
-        # cost = tf.reduce_mean(-tf.reduce_sum(y * tf.log(pred), reduction_indices=1))
-    
+        cost = tf.reduce_mean(-tf.reduce_sum(y * tf.log(fn), reduction_indices=1))
+    return cost
+
+def builtin_cross_entropy_loss(fn, y):
+    with tf.name_scope('Loss'):
         # Minimize error with *better* cross entropy
-        # cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=pred))
-    
+        cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=fn))
+    return cost
+
+def squared_error_loss(fn, y):
+    with tf.name_scope('Loss'):
+        # Minimize error with *better* cross entropy
+        cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=fn))
+    return cost
+
+def builtin_l2_loss(fn, y):
+    with tf.name_scope('Loss'):
         # Minimize error using squared error
-        # cost = tf.nn.l2_loss(y - pred)
-    
-        # Minimize with computed square error
-        cost = tf.reduce_mean(tf.pow(y - pred, 2))
+        cost = tf.nn.l2_loss(y - fn)
+    return cost
+
+###################################################################
+# Accuracy                                                        #
+###################################################################
+def get_accuracy(fn, y):
+    with tf.name_scope('Accuracy'):
+        acc = tf.equal(tf.argmax(fn, 1), tf.argmax(y, 1))
+        acc = tf.reduce_mean(tf.cast(acc, tf.float32))
+    return acc
+
+###################################################################
+# Optimizer                                                       #
+###################################################################
+def sgd_optimizer(cost, lr):
     with tf.name_scope('SGD'):
         # Gradient Descent
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
-    with tf.name_scope('Accuracy'):
-        # Accuracy
-        acc = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
-        acc = tf.reduce_mean(tf.cast(acc, tf.float32))
+        optimizer = tf.train.GradientDescentOptimizer(lr).minimize(cost)
+    return optimizer
+
+###################################################################
+# Save Model                                                      #
+###################################################################
+def save_model(sess):
+    # saving model
+    checkpoint = os.path.join(export_path, "model.ckpt")
+    saver = tf.train.Saver()
+    # checkpoint - variables
+    saver.save(sess, checkpoint)
+    # graph
+    tf.train.write_graph(sess.graph_def, export_path, "model.pb", as_text=False)
+    # freeze
+    g = os.path.join(export_path, "model.pb")
+    frozen = os.path.join(export_path, "digits.pb")
+        
+    freeze.freeze_graph(
+        input_graph = g, 
+        input_saver = "", 
+        input_binary = True, 
+        input_checkpoint = checkpoint, 
+        output_node_names = "Model/model",
+        restore_op_name = "",
+        filename_tensor_name = "",
+        output_graph = frozen,
+        clear_devices = True,
+        initializer_nodes = ""
+    )
+    print("Model saved!")
+
+def main(_):
+    # resetting graph
+    tf.reset_default_graph()
+
+    # import MINST data
+    mnist = input_data.read_data_sets(data_path, one_hot=True)
+
+    # mnist data image of shape 28*28=784
+    x = tf.placeholder(tf.float32, [None, 784], name='input')
+
+    # 0-9 digits recognition => 10 classes
+    y = tf.placeholder(tf.float32, [None, 10], name='label')
+
+    # model
+    pred = softmax_model(x)
+
+    # model accuracy
+    acc = get_accuracy(pred, y)
+
+    # cost / loss
+    cost = cross_entropy_loss(pred, y)
+
+    # trainer
+    optimizer = sgd_optimizer(cost, learning_rate)
+    
 
     # Initializing the variables
     init = tf.global_variables_initializer()
@@ -112,32 +186,10 @@ def main(_):
         # Test model
         # Calculate accuracy
         print("Accuracy:", acc.eval({x: mnist.test.images, y: mnist.test.labels}))
+
+        save_model(sess)
     
-        # saving model
-        checkpoint = os.path.join(export_path, "model.ckpt")
-        saver = tf.train.Saver()
-        # checkpoint - variables
-        saver.save(sess, checkpoint)
-        # graph
-        tf.train.write_graph(sess.graph_def, export_path, "model.pb", as_text=False)
-        # freeze
-        # python "Python\Lib\site-packages\tensorflow\python\tools\freeze_graph.py" --input_graph=.\Profile.pb --input_checkpoint=.\Profile.ckpt --output_node_names=Output/Predictions,Output/Loss --output_graph=frozen.pb 
-        g = os.path.join(export_path, "model.pb")
-        frozen = os.path.join(export_path, "frozen.pb")
-        
-        freeze.freeze_graph(
-            input_graph = g, 
-            input_saver = "", 
-            input_binary = True, 
-            input_checkpoint = checkpoint, 
-            output_node_names = "Model/linear",
-            restore_op_name = "",
-            filename_tensor_name = "",
-            output_graph = frozen,
-            clear_devices = True,
-            initializer_nodes = ""
-        )
-        print("Model saved!")
+
     exit(0)
 
 

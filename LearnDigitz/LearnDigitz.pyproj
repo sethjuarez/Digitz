@@ -14,6 +14,7 @@
     <CommandLineArguments>--input_dir . --output_dir .</CommandLineArguments>
     <Name>LearnDigitz</Name>
     <RootNamespace>LearnDigitz</RootNamespace>
+    <IsWindowsApplication>False</IsWindowsApplication>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
