@@ -65,32 +65,77 @@ batch_size = 100
 ###################################################################
 # Models                                                          #
 ###################################################################
-def linear_model(x):
+def linear_model(x, init=tf.zeros):
     info_caller()
     # set model weights
-    W = tf.Variable(tf.zeros([784, 10]), name='weights')
-    b = tf.Variable(tf.zeros([10]), name='bias')
+    W = tf.Variable(init([784, 10]), name='weights')
+    b = tf.Variable(init([10]), name='bias')
 
     # scope for tensorboard
     with tf.name_scope('Model'):
         pred = tf.add(tf.matmul(x, W), b, name="model")  # linear combination
     return pred
 
-def softmax_model(x):
+def softmax_model(x, init=tf.zeros):
     info_caller()
     # set model weights
-    W = tf.Variable(tf.zeros([784, 10]), name='weights')
-    b = tf.Variable(tf.zeros([10]), name='bias')
+    W = tf.Variable(init([784, 10]), name='weights')
+    b = tf.Variable(init([10]), name='bias')
 
     # scope for tensorboard
     with tf.name_scope('Model'):
         pred = tf.nn.softmax(tf.matmul(x, W) + b, name="model") # Softmax
     return pred
 
-def mlp_model(x):
-    return
+def multilayer_perceptron_model(x, init=tf.random_normal, hidden = [256, 256]):
+    info_caller()
 
-def cnn_model(x):
+    # for size of input layer
+    hidden.insert(0, 28 * 28)
+
+    last_output = x
+    for i in range(len(hidden) - 1):
+        # layer n
+        with tf.name_scope("Layer" + str(i)):
+            W = tf.Variable(init([hidden[i], hidden[i+1]]), name="h" + str(i))
+            b = tf.Variable(init([hidden[i+1]]), name="b" + str(i))
+            layer = tf.add(tf.matmul(last_output, W), b, name="layer" + str(i))
+            # for next iteration
+            last_output = layer
+
+    # output layer
+    with tf.name_scope("Model"):
+        Wo = tf.Variable(init([hidden[-1], 10]), name="Wo")
+        Bo = tf.Variable(init([10]), name="Bo")
+        pred = tf.add(tf.matmul(last_output, Wo), Bo, name="model")
+
+    return pred
+
+def multilayer_perceptron_relu_softmax_model(x, init=tf.random_normal, hidden=[256, 256]):
+    info_caller()
+
+    # for size of input layer
+    hidden.insert(0, 28 * 28)
+
+    last_output = x
+    for i in range(len(hidden) - 1):
+        # layer n
+        with tf.name_scope("Layer" + str(i)):
+            W = tf.Variable(init([hidden[i], hidden[i+1]]), name="h" + str(i))
+            b = tf.Variable(init([hidden[i+1]]), name="b" + str(i))
+            layer = tf.add(tf.matmul(last_output, W), b, name="layer" + str(i))
+            # for next iteration
+            last_output = tf.nn.relu(layer, name="activation" + str(i))
+
+    # output layer
+    with tf.name_scope("Model"):
+        Wo = tf.Variable(init([hidden[-1], 10]), name="Wo")
+        Bo = tf.Variable(init([10]), name="Bo")
+        pred = tf.nn.softmax(tf.matmul(last_output, Wo) + Bo, name="model")
+
+    return pred
+
+def convolutional_neural_network_model(x):
     info_caller()
     # Reshape to use within a convolutional neural net.
     # Last dimension is for "features" - there is only one here, since images are
@@ -141,7 +186,6 @@ def cnn_model(x):
 
     return y_conv
 
-
 ###################################################################
 # Cost / Loss Functions                                           #
 ###################################################################
@@ -183,7 +227,7 @@ def builtin_l2_loss(fn, y):
 # Accuracy                                                        #
 ###################################################################
 def get_accuracy(fn, y):
-    with tf.name_scope('accuracy'):
+    with tf.name_scope('score'):
         acc = tf.equal(tf.argmax(fn, 1), tf.argmax(y, 1))
         acc = tf.reduce_mean(tf.cast(acc, tf.float32))
     return acc
@@ -261,8 +305,8 @@ def main(_):
     # 0-9 digits recognition => 10 classes
     y = tf.placeholder(tf.float32, [None, 10], name='label')
 
-    # model
-    predictor = cnn_model(x)
+    # model init=tf.keras.initializers.he_uniform()
+    predictor = convolutional_neural_network_model(x)
 
     # model accuracy
     accuracy = get_accuracy(predictor, y)
