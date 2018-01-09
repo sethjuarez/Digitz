@@ -8,6 +8,13 @@ from tensorflow.examples.tutorials.mnist import input_data
 from datetime import *
 
 ###################################################################
+# Parameters                                                      #
+###################################################################
+learning_rate = 0.01
+training_epochs = 10
+batch_size = 100
+
+###################################################################
 # Output Paths / Utils                                            #
 ###################################################################
 unique = datetime.now().strftime('%m.%d_%H.%M')
@@ -23,8 +30,12 @@ def info(msg, char = "#", width = 75):
 
 def info_caller():
     # getting calling function
-    caller = inspect.stack()[1].function
-    print(" - Using: %s" % caller)
+    caller = inspect.stack()[1]
+    print(" - Using: %s" % caller.function)
+    args, _, _, values = inspect.getargvalues(caller[0])
+    for i in args:
+        o = str(values[i]).replace("\n", "            \n")
+        print ("      %s = %s" % (i, o))
     
 ###################################################################
 # Save Model                                                      #
@@ -54,13 +65,6 @@ def save_model(sess, export_path):
         initializer_nodes = ""
     )
     print("Model saved to " + frozen)
-
-###################################################################
-# Parameters                                                      #
-###################################################################
-learning_rate = 0.01
-training_epochs = 10
-batch_size = 100
 
 ###################################################################
 # Models                                                          #
@@ -242,11 +246,19 @@ def sgd_optimizer(cost, lr):
         optimizer = tf.train.GradientDescentOptimizer(lr).minimize(cost)
     return optimizer
 
+def adam_optimizer(cost, lr):
+    info_caller()
+    with tf.name_scope('optimizer'):
+        # Gradient Descent
+        optimizer = tf.train.GradientDescentOptimizer(lr).minimize(cost)
+    return optimizer
+
 ###################################################################
 # Train Model                                                     #
 ###################################################################
 def train_model(optimizer, cost, accuracy, x, y, batch_size = 100, training_epochs = 10):
     info("Training Phase")
+    info_caller()
     # import MINST data
     mnist = input_data.read_data_sets(data_path, one_hot=True)
 
@@ -315,10 +327,10 @@ def main(_):
     cost = builtin_cross_entropy_loss(predictor, y)
 
     # optimizer
-    optimizer = sgd_optimizer(cost, learning_rate)
+    optimizer = adam_optimizer(cost, 1e-4)
 
     # training
-    train_model(optimizer, cost, accuracy, x, y, batch_size, training_epochs)
+    train_model(optimizer, cost, accuracy, x, y, batch_size, 200)
 
     exit(0)
 
