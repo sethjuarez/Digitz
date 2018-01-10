@@ -165,7 +165,6 @@ def convolutional_neural_network_model(x):
         b_conv2 = tf.Variable(tf.constant(0.1, shape=[64]))
         conv2 = tf.nn.conv2d(h_pool1, W_conv2, strides=[1, 1, 1, 1], padding='SAME')
         h_conv2 = tf.nn.relu(conv2 + b_conv2)
-                    
 
     # Second pooling layer.
     with tf.name_scope('pool2'):
@@ -217,11 +216,11 @@ def sparse_softmax_cross_entropy_loss(fn, y):
 def squared_error_loss(fn, y):
     info_caller()
     with tf.name_scope('loss'):
-        # Minimize error with *better* cross entropy
         cost = tf.reduce_mean(tf.pow(y - fn, 2))
     return cost
 
 def builtin_l2_loss(fn, y):
+    info_caller()
     with tf.name_scope('loss'):
         # Minimize error using squared error
         cost = tf.nn.l2_loss(y - fn)
@@ -333,7 +332,6 @@ def main(_):
     train_model(optimizer, cost, accuracy, x, y, batch_size, 200)
 
     exit(0)
-
 
 if __name__ == "__main__":
     tf.app.run()
