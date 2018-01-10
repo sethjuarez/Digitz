@@ -1,0 +1,4 @@
+1. clear log and model outputs
+2. reset to simple linear model
+3. don't forget He initializations for MLP with activations
+4. remove straight linear
