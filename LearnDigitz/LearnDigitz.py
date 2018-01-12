@@ -317,19 +317,19 @@ def main(_):
     y = tf.placeholder(tf.float32, [None, 10], name='label')
 
     # model init=tf.keras.initializers.he_uniform()
-    predictor = convolutional_neural_network_model(x)
+    predictor = multilayer_perceptron_relu_softmax_model(x, init=tf.keras.initializers.he_uniform())
 
     # model accuracy
     accuracy = get_accuracy(predictor, y)
 
     # cost / loss
-    cost = builtin_cross_entropy_loss(predictor, y)
+    cost = squared_error_loss(predictor, y)
 
     # optimizer
-    optimizer = adam_optimizer(cost, 1e-4)
+    optimizer = sgd_optimizer(cost, learning_rate)
 
     # training
-    train_model(optimizer, cost, accuracy, x, y, batch_size, 200)
+    train_model(optimizer, cost, accuracy, x, y, batch_size, training_epochs)
 
     exit(0)
 
