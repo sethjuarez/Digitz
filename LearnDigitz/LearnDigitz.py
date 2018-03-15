@@ -317,7 +317,7 @@ def main(_):
     y = tf.placeholder(tf.float32, [None, 10], name='label')
 
     # model init=tf.keras.initializers.he_uniform()
-    predictor = multilayer_perceptron_relu_softmax_model(x, init=tf.keras.initializers.he_uniform())
+    predictor = linear_model(x)
 
     # model accuracy
     accuracy = get_accuracy(predictor, y)

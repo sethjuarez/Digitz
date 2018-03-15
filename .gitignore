@@ -37,3 +37,4 @@ __pycache__
 model/
 logs/
 data/
+.ipynb_checkpoints/
