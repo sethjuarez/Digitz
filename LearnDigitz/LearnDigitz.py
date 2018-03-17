@@ -316,17 +316,18 @@ def main(_):
     # 0-9 digits recognition => 10 classes
     y = tf.placeholder(tf.float32, [None, 10], name='label')
 
-    # model init=tf.keras.initializers.he_uniform()
-    predictor = linear_model(x)
+    # model 
+    predictor = multilayer_perceptron_relu_softmax_model(x, 
+                                    init=tf.keras.initializers.he_uniform())
 
     # model accuracy
     accuracy = get_accuracy(predictor, y)
 
     # cost / loss
-    cost = squared_error_loss(predictor, y)
+    cost = cross_entropy_loss(predictor, y)
 
     # optimizer
-    optimizer = sgd_optimizer(cost, learning_rate)
+    optimizer = adam_optimizer(cost, learning_rate)
 
     # training
     train_model(optimizer, cost, accuracy, x, y, batch_size, training_epochs)
