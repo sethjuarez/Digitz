@@ -19,8 +19,8 @@ batch_size = 100
 ###################################################################
 unique = datetime.now().strftime('%m.%d_%H.%M')
 data_path = 'data'
-logs_path = os.path.join('logs', 'log_' + unique)
-export_path = os.path.join('model', 'model_' + unique)
+logs_path = os.path.join('output', 'logs', 'log_' + unique)
+export_path = os.path.join('output', 'model', 'model_' + unique)
 
 def info(msg, char = "#", width = 75):
     print("")
@@ -201,7 +201,7 @@ def cross_entropy_loss(fn, y):
 
 def builtin_cross_entropy_loss(fn, y):
     info_caller()
-    with tf.name_scope('Loss'):
+    with tf.name_scope('loss'):
         # Minimize error with *better* cross entropy
         cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=fn))
     return cost
@@ -317,14 +317,15 @@ def main(_):
     y = tf.placeholder(tf.float32, [None, 10], name='label')
 
     # model 
-    predictor = multilayer_perceptron_relu_softmax_model(x, 
-                                    init=tf.keras.initializers.he_uniform())
+    #predictor = multilayer_perceptron_relu_softmax_model(x, 
+    #                                init=tf.keras.initializers.he_uniform())
+    predictor = convolutional_neural_network_model(x)
 
     # model accuracy
     accuracy = get_accuracy(predictor, y)
 
     # cost / loss
-    cost = cross_entropy_loss(predictor, y)
+    cost = builtin_cross_entropy_loss(predictor, y)
 
     # optimizer
     optimizer = adam_optimizer(cost, learning_rate)

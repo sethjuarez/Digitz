@@ -1,0 +1,6 @@
+.azuremlhistory_git
+.ipynb_checkpoints
+azureml-logs
+*.dprep.user
+.azureml
+aml_config/
