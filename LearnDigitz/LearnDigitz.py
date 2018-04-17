@@ -1,11 +1,11 @@
-﻿import numpy as np
-import inspect
+﻿import os
 import sys
-import os
+import inspect
+import numpy as np
+from datetime import *
 import tensorflow as tf
 from tensorflow.python.tools import freeze_graph as freeze
 from tensorflow.examples.tutorials.mnist import input_data
-from datetime import *
 
 ###################################################################
 # Parameters                                                      #
@@ -45,6 +45,9 @@ def save_model(sess, export_path):
     checkpoint = os.path.join(export_path, "model.ckpt")
     saver = tf.train.Saver()
     # checkpoint - variables
+    if not os.path.exists(export_path):
+        os.makedirs(export_path)
+        
     saver.save(sess, checkpoint)
     # graph
     tf.train.write_graph(sess.graph_def, export_path, "model.pb", as_text=False)
@@ -203,7 +206,7 @@ def builtin_cross_entropy_loss(fn, y):
     info_caller()
     with tf.name_scope('loss'):
         # Minimize error with *better* cross entropy
-        cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=fn))
+        cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=y, logits=fn))
     return cost
 
 def sparse_softmax_cross_entropy_loss(fn, y):
