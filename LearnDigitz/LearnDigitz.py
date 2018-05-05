@@ -4,6 +4,7 @@ import inspect
 import numpy as np
 from datetime import *
 import tensorflow as tf
+from tensorflow.python.framework import ops
 from tensorflow.python.tools import freeze_graph as freeze
 from tensorflow.examples.tutorials.mnist import input_data
 
@@ -49,12 +50,14 @@ def save_model(sess, export_path):
         os.makedirs(export_path)
         
     saver.save(sess, checkpoint)
+
     # graph
     tf.train.write_graph(sess.graph_def, export_path, "model.pb", as_text=False)
+
     # freeze
     g = os.path.join(export_path, "model.pb")
     frozen = os.path.join(export_path, "digits.pb")
-        
+
     freeze.freeze_graph(
         input_graph = g, 
         input_saver = "", 
@@ -65,8 +68,8 @@ def save_model(sess, export_path):
         filename_tensor_name = "",
         output_graph = frozen,
         clear_devices = True,
-        initializer_nodes = ""
-    )
+        initializer_nodes = "")
+
     print("Model saved to " + frozen)
 
 ###################################################################
@@ -75,8 +78,8 @@ def save_model(sess, export_path):
 def linear_model(x, init=tf.zeros):
     info_caller()
     # set model weights
-    W = tf.Variable(init([784, 10]), name='weights')
-    b = tf.Variable(init([10]), name='bias')
+    W = tf.Variable(init([784, 10]), name='W')
+    b = tf.Variable(init([10]), name='b')
 
     # scope for tensorboard
     with tf.name_scope('Model'):
@@ -86,8 +89,8 @@ def linear_model(x, init=tf.zeros):
 def softmax_model(x, init=tf.zeros):
     info_caller()
     # set model weights
-    W = tf.Variable(init([784, 10]), name='weights')
-    b = tf.Variable(init([10]), name='bias')
+    W = tf.Variable(init([784, 10]), name='W')
+    b = tf.Variable(init([10]), name='b')
 
     # scope for tensorboard
     with tf.name_scope('Model'):
@@ -252,7 +255,7 @@ def adam_optimizer(cost, lr):
     info_caller()
     with tf.name_scope('optimizer'):
         # Gradient Descent
-        optimizer = tf.train.GradientDescentOptimizer(lr).minimize(cost)
+        optimizer = tf.train.AdamOptimizer(lr).minimize(cost)
     return optimizer
 
 ###################################################################
@@ -265,7 +268,7 @@ def train_model(optimizer, cost, accuracy, x, y, batch_size = 100, training_epoc
     mnist = input_data.read_data_sets(data_path, one_hot=True)
 
     # Create a summary to monitor cost tensor
-    tf.summary.scalar("loss", cost)
+    tf.summary.scalar("cost", cost)
     # Create a summary to monitor accuracy tensor
     tf.summary.scalar("accuracy", accuracy)
     # Merge all summaries into a single op
@@ -314,23 +317,25 @@ def main(_):
     info("Building Computation Graph")
 
     # mnist data image of shape 28*28=784
-    x = tf.placeholder(tf.float32, [None, 784], name='input')
+    x = tf.placeholder(tf.float32, [None, 784], name='x')
 
     # 0-9 digits recognition => 10 classes
-    y = tf.placeholder(tf.float32, [None, 10], name='label')
+    y = tf.placeholder(tf.float32, [None, 10], name='y')
 
     # model 
-    #predictor = multilayer_perceptron_relu_softmax_model(x, 
-    #                                init=tf.keras.initializers.he_uniform())
+    #predictor = linear_model(x)
+    #predictor = multilayer_perceptron_relu_softmax_model(x, init=tf.keras.initializers.he_uniform())
     predictor = convolutional_neural_network_model(x)
 
     # model accuracy
     accuracy = get_accuracy(predictor, y)
 
     # cost / loss
-    cost = builtin_cross_entropy_loss(predictor, y)
+    cost = squared_error_loss(predictor, y)
+    #cost = builtin_cross_entropy_loss(predictor, y)
 
     # optimizer
+    #optimizer = sgd_optimizer(cost, learning_rate)
     optimizer = adam_optimizer(cost, learning_rate)
 
     # training
