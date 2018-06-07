@@ -38,3 +38,5 @@ model/
 logs/
 data/
 .ipynb_checkpoints/
+
+packages/
