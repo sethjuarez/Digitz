@@ -2,10 +2,11 @@
 import sys
 import inspect
 import numpy as np
-from datetime import *
 import tensorflow as tf
-from tensorflow.python.framework import ops
+from datetime import datetime
+# pylint: disable-msg=E0611
 from tensorflow.python.tools import freeze_graph as freeze
+# pylint: enable-msg=E0611
 from tensorflow.examples.tutorials.mnist import input_data
 
 ###################################################################
@@ -21,7 +22,7 @@ batch_size = 100
 unique = datetime.now().strftime('%m.%d_%H.%M')
 data_path = 'data'
 logs_path = os.path.join('output', 'logs', 'log_' + unique)
-export_path = os.path.join('output', 'model', 'model_' + unique)
+export_path = os.path.join('output', 'models', 'model_' + unique)
 
 def info(msg, char = "#", width = 75):
     print("")
@@ -323,9 +324,9 @@ def main(_):
     y = tf.placeholder(tf.float32, [None, 10], name='y')
 
     # model 
-    #predictor = linear_model(x)
+    predictor = linear_model(x)
     #predictor = multilayer_perceptron_relu_softmax_model(x, init=tf.keras.initializers.he_uniform())
-    predictor = convolutional_neural_network_model(x)
+    #predictor = convolutional_neural_network_model(x)
 
     # model accuracy
     accuracy = get_accuracy(predictor, y)
@@ -335,8 +336,8 @@ def main(_):
     #cost = builtin_cross_entropy_loss(predictor, y)
 
     # optimizer
-    #optimizer = sgd_optimizer(cost, learning_rate)
-    optimizer = adam_optimizer(cost, learning_rate)
+    optimizer = sgd_optimizer(cost, learning_rate)
+    #optimizer = adam_optimizer(cost, learning_rate)
 
     # training
     train_model(optimizer, cost, accuracy, x, y, batch_size, training_epochs)

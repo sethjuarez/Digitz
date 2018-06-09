@@ -4,3 +4,4 @@ azureml-logs
 *.dprep.user
 .azureml
 aml_config/
+output/
