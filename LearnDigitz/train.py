@@ -13,17 +13,17 @@ from misc.helpers import print_info, print_args, check_dir, info, save_model
 # Models                                                          #
 ###################################################################
 @print_info
-def linear_model(x, init=tf.zeros):
+def linear_model(x):
     with tf.name_scope("Model"):
         # set model weights
-        W = tf.Variable(init([784, 10]), name='W')
-        b = tf.Variable(init([10]), name='b')
+        W = tf.Variable(tf.zeros([784, 10]), name='W')
+        b = tf.Variable(tf.zeros([10]), name='b')
 
         # linear combination
         return tf.add(tf.matmul(x, W), b, name="prediction")
 
 @print_info
-def mlp_model(x, init=tf.keras.initializers.he_uniform(), hidden=[512, 512]):
+def mlp_model(x, hidden=[512, 512]):
     # for size of input layer
     hidden.insert(0, 28 * 28)
 
@@ -31,16 +31,16 @@ def mlp_model(x, init=tf.keras.initializers.he_uniform(), hidden=[512, 512]):
     for i in range(len(hidden) - 1):
         # layer n
         with tf.name_scope("Layer" + str(i)):
-            W = tf.Variable(init([hidden[i], hidden[i+1]]), name="h" + str(i))
-            b = tf.Variable(init([hidden[i+1]]), name="b" + str(i))
+            W = tf.Variable(tf.keras.initializers.he_uniform([hidden[i], hidden[i+1]]), name="h" + str(i))
+            b = tf.Variable(tf.keras.initializers.he_uniform([hidden[i+1]]), name="b" + str(i))
             layer = tf.add(tf.matmul(last_output, W), b, name="layer" + str(i))
             # for next iteration
             last_output = tf.nn.relu(layer, name="activation" + str(i))
 
     # output layer
     with tf.name_scope("Model"):
-        Wo = tf.Variable(init([hidden[-1], 10]), name="Wo")
-        Bo = tf.Variable(init([10]), name="Bo")
+        Wo = tf.Variable(tf.keras.initializers.he_uniform([hidden[-1], 10]), name="Wo")
+        Bo = tf.Variable(tf.keras.initializers.he_uniform([10]), name="Bo")
         pred = tf.nn.softmax(tf.matmul(last_output, Wo) + Bo, name="prediction")
 
     return pred
@@ -94,6 +94,50 @@ def cnn_model(x):
         y_conv = tf.add(tf.matmul(h_fc1, W_fc2), b_fc2, name="prediction")
 
     return y_conv
+
+###################################################################
+# Models (Better)                                                 #
+###################################################################
+@print_info
+def linear_better(x, init=tf.zeros):
+    with tf.name_scope("Model"):
+        pred = tf.layers.dense(inputs=x, units=10)
+        return tf.identity(pred, name="prediction")
+
+@print_info
+def mlp_better(x, hidden=[512, 512]):
+    last_output = x
+    for i in range(len(hidden)):
+        # layer n
+        last_output = tf.layers.dense(inputs=last_output, units=hidden[i], activation=tf.nn.relu)
+
+    # output layer
+    with tf.name_scope("Model"):
+        pred = tf.layers.dense(inputs=last_output, units=10, activation=tf.nn.softmax)
+        return tf.identity(pred, name="prediction")
+
+@print_info
+def cnn_better(x):
+    conv1 = tf.layers.conv2d(inputs=tf.reshape(x, [-1, 28, 28, 1]), 
+                             filters=32, 
+                             kernel_size=[5, 5], 
+                             padding="same", 
+                             activation=tf.nn.relu)
+
+    pool1 = tf.layers.max_pooling2d(inputs=conv1, pool_size=[2, 2], strides=2)
+    conv2 = tf.layers.conv2d(inputs=pool1,
+                             filters=64,
+                             kernel_size=[5, 5],
+                             padding="same",
+                             activation=tf.nn.relu)
+
+    pool2 = tf.layers.max_pooling2d(inputs=conv2, pool_size=[2, 2], strides=2)
+    pool2_flat = tf.reshape(pool2, [-1, 7 * 7 * 64])
+    dense = tf.layers.dense(inputs=pool2_flat, units=1024, activation=tf.nn.relu)
+    
+    with tf.name_scope('Model'):
+        pred = tf.layers.dense(inputs=dense, units=10)
+        return tf.identity(pred, name="prediction")
 
 ###################################################################
 # Training                                                        #
@@ -166,13 +210,13 @@ def main(settings):
     y = tf.placeholder(tf.float32, [None, 10], name='y')
 
     # model
-    hx = cnn_model(x)
+    hx = cnn_better(x)
 
     # accuracy
     accuracy = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(hx, 1), tf.argmax(y, 1)), tf.float32))
 
     # cost / loss
-    #cost = tf.reduce_mean(tf.pow(hx - y, 2), name='loss')
+    #cost = tf.reduce_mean(tf.pow(hx - y, 2))
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=y, logits=hx))
 
     # optimizer

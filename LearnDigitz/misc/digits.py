@@ -55,7 +55,7 @@ class Digits:
 
 
 if __name__ == "__main__":
-    p = os.path.abspath('..\data')
+    p = os.path.abspath('..\\data')
     print(p)
     digits = Digits(p, 1587)
     for i, (x, y) in enumerate(digits):
