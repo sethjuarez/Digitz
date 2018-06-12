@@ -146,6 +146,7 @@ def cnn_better(x):
 def train_model(x, y, cost, optimizer, accuracy, learning_rate, batch_size, epochs, data_dir, model_dir, log_dir):
     info('Initializing Devices')
     print(' ')
+    
     # load MNIST data (if not available)
     digits = Digits(data_dir, batch_size)
     test_x, test_y = digits.test
@@ -210,32 +211,21 @@ def main(settings):
     y = tf.placeholder(tf.float32, [None, 10], name='y')
 
     # model
-    hx = cnn_better(x)
+    hx = linear_model(x)
 
     # accuracy
     accuracy = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(hx, 1), tf.argmax(y, 1)), tf.float32))
 
     # cost / loss
-    #cost = tf.reduce_mean(tf.pow(hx - y, 2))
-    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=y, logits=hx))
+    cost = tf.reduce_mean(tf.pow(hx - y, 2))
 
     # optimizer
-    #optimizer = tf.train.GradientDescentOptimizer(settings.lr).minimize(cost)
-    optimizer = tf.train.AdamOptimizer(settings.lr).minimize(cost)
+    optimizer = tf.train.GradientDescentOptimizer(settings.lr).minimize(cost)
 
-    # training
-    train_model(
-        x,
-        y,
-        cost, 
-        optimizer, 
-        accuracy, 
-        settings.lr, 
-        settings.batch, 
-        settings.epochs, 
-        settings.data, 
-        settings.model, 
-        settings.log)
+    # training session
+    train_model(x, y, cost, optimizer, accuracy, 
+        settings.lr, settings.batch, settings.epochs, 
+        settings.data, settings.model, settings.log)
 
 
 if __name__ == "__main__":
@@ -252,9 +242,5 @@ if __name__ == "__main__":
     unique = datetime.now().strftime('%m.%d_%H.%M')    
     args.log = check_dir(os.path.join(args.output, 'logs', 'log_{}'.format(unique)))
     args.model = check_dir(os.path.join(args.output, 'models', 'model_{}'.format(unique)))
-
-    #print(type(args))
-    # show settings
-    # print_args(args)
-
+    
     main(args)
