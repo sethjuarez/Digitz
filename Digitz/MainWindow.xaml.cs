@@ -72,6 +72,9 @@ namespace Digitz
             // sanity check
             Console.Write(Stringify(data));
 
+            // normalize
+            for(int i = 0; i < data.Length; i++) data[i] /= 255;
+
             return TFTensor.FromBuffer(new TFShape(1, data.Length), data, 0, data.Length);
         }
 
