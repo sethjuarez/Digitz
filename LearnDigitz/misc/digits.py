@@ -53,16 +53,24 @@ class Digits:
     def total(self):
         return self._total
 
+    def stringify(self, index):
+        index = 0 if index < 0 else index
+        index = self._train_count - 1 if index > self._train_count else index
+        x = self._trainX[index, :]
+        y = np.eye(10)[self._trainY[index]]
+
+        s = np.sqrt(x.shape[0])
+
+        for i in range(x.shape[0]):
+            if i == 0: print("{{\r\n   ", end="")
+            elif i % s == 0: print("\r\n   ", end="")
+            print("{:>3}, ".format(int(x[i] * 255)), end="")
+
+        print('\r\n}}\r\n', end="")
+        print(y)
+
 
 if __name__ == "__main__":
     p = os.path.abspath('..\\data')
-    print(p)
-    digits = Digits(p, 1587)
-    for i, (x, y) in enumerate(digits):
-        print(i, x.shape, y.shape)
-
-    print(digits.total)
-    x, y = digits.test
-    print(x.shape, y.shape)
-    for i in x:
-        print(i)
+    digits = Digits(p, 1000)
+    digits.stringify(656)
