@@ -51,7 +51,7 @@ def cnn():
 
 def run(data_dir, model_dir, epochs):
   # get data
-  (x_train, y_train),(x_test, y_test) = load_digits(data_dir)
+  (x_train, y_train), (x_test, y_test) = load_digits(data_dir)
 
   # create model structure
   model = linear()
@@ -60,9 +60,6 @@ def run(data_dir, model_dir, epochs):
   model.compile(loss='mean_squared_error', 
     optimizer='adam', 
     metrics=['accuracy'])
-  #model.compile(optimizer='adam',
-  #  loss='sparse_categorical_crossentropy',
-  #  metrics=['accuracy'])
 
   # run model
   model.fit(x_train, y_train, epochs=epochs)
