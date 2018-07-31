@@ -56,9 +56,7 @@ def run(data_dir, model_dir, epochs):
   model = linear()
 
   # compile model
-  model.compile(loss='mean_squared_error', 
-    optimizer='adam', 
-    metrics=['accuracy'])
+  model.compile(loss='mse', optimizer='adam', metrics=['accuracy'])
 
   # run model
   model.fit(x_train, y_train, epochs=epochs)
