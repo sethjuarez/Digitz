@@ -16,12 +16,12 @@ def load_digits(data_dir):
   x_test = x_test.reshape(x_test.shape[0], x_test.shape[1] * x_test.shape[2]) / 255.0
   y_train, y_test = to_categorical(y_train, 10), to_categorical(y_test, 10)
   return (x_train, y_train),(x_test, y_test)
+
 ###################################################################
 # Simple (W.T * X + b)                                            #
 ###################################################################
 def linear():
-  model = Sequential([Dense(10)])
-  return model
+  return Sequential([Dense(10)])
 
 ###################################################################
 # Neural Network                                                  #
@@ -29,7 +29,7 @@ def linear():
 def mlp(hidden=[512, 512]):
   model = Sequential()
   for i in range(len(hidden)):
-    model.add(Dense(512, activation='relu'))
+    model.add(Dense(hidden[i], activation='relu'))
   model.add(Dense(10, activation='softmax'))
   return model
 
@@ -37,8 +37,8 @@ def mlp(hidden=[512, 512]):
 # Convolutional Neural Network                                    #
 ###################################################################
 def cnn():
-  model = tf.keras.Sequential([
-    Reshape((-1, 28, 28, 1)),
+  return tf.keras.Sequential([
+    Reshape((28, 28, 1)),
     Conv2D(32, [5, 5], padding='same', activation='relu'),
     MaxPooling2D(strides=2),
     Conv2D(64, [5, 5], padding='same', activation='relu'),
@@ -47,7 +47,6 @@ def cnn():
     Dense(1024, activation='relu'),
     Dense(10, activation='softmax')
   ])
-  return model
 
 def run(data_dir, model_dir, epochs):
   # get data
