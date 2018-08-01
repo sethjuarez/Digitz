@@ -15,7 +15,7 @@ def load_digits(data_dir):
   x_train = x_train.reshape(x_train.shape[0], x_train.shape[1] * x_train.shape[2]) / 255.0
   x_test = x_test.reshape(x_test.shape[0], x_test.shape[1] * x_test.shape[2]) / 255.0
   y_train, y_test = to_categorical(y_train, 10), to_categorical(y_test, 10)
-  return (x_train, y_train),(x_test, y_test)
+  return (x_train, y_train), (x_test, y_test)
 
 ###################################################################
 # Simple (W.T * X + b)                                            #
@@ -26,18 +26,18 @@ def linear():
 ###################################################################
 # Neural Network                                                  #
 ###################################################################
-def mlp(hidden=[512, 512]):
-  model = Sequential()
-  for i in range(len(hidden)):
-    model.add(Dense(hidden[i], activation='relu'))
-  model.add(Dense(10, activation='softmax'))
-  return model
+def mlp():
+  return Sequential([
+    Dense(512, activation='relu'),
+    Dense(512, activation='relu'),
+    Dense(10, activation='softmax')
+  ])
 
 ###################################################################
 # Convolutional Neural Network                                    #
 ###################################################################
 def cnn():
-  return tf.keras.Sequential([
+  return Sequential([
     Reshape((28, 28, 1)),
     Conv2D(32, [5, 5], padding='same', activation='relu'),
     MaxPooling2D(strides=2),
@@ -53,7 +53,7 @@ def run(data_dir, model_dir, epochs):
   (x_train, y_train), (x_test, y_test) = load_digits(data_dir)
 
   # create model structure
-  model = linear()
+  model = Sequential([Dense(10)])
 
   # compile model
   model.compile(loss='mse', optimizer='adam', metrics=['accuracy'])

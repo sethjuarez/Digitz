@@ -1,3 +1,4 @@
+import tensorflow as tf
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import load_model
 from tensorflow.python.saved_model import builder as saved_model_builder
@@ -18,6 +19,8 @@ def export_h5_to_pb(model, export_path):
     print(model.input)
     print(model.output)
 
+    output_node = model.output.name.split(':')[0]
+
     # Load the Keras model
     #keras_model = load_model(path_to_h5)
 
@@ -29,12 +32,22 @@ def export_h5_to_pb(model, export_path):
     #                                  outputs={"scores": keras_model.output})
 
     with K.get_session() as sess:
+
+        tf.identity(model.input, name='x')
+        tf.identity(model.output, name='prediction')
+
         # Save the meta graph and the variables
         #builder.add_meta_graph_and_variables(sess=sess, tags=[tag_constants.SERVING],
         #                                 signature_def_map={"predict": signature})
-        constant_graph = graph_util.convert_variables_to_constants(sess, 
-            sess.graph.as_graph_def(), [model.output])
+        graph = graph_util.convert_variables_to_constants(sess, 
+            sess.graph.as_graph_def(), [output_node])
 
-        graph_io.write_graph(constant_graph, export_path, 'digits.pb', as_text=False)
+
+
+        graph_io.write_graph(graph, export_path, 'digits.pb', as_text=False)
 
     #builder.save()
+
+if __name__ == "__main__":
+    mf = 'C:\\projects\\Digitz\\LearnDigitz\\output\\models\\model_07.31_17.57\\model.h5'
+    model = load_model(mf)
