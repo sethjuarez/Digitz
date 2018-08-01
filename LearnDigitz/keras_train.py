@@ -3,10 +3,29 @@ import numpy as np
 import tensorflow as tf
 from datetime import datetime
 from tensorflow.keras import Sequential
+from tensorflow.keras import backend as K
 from tensorflow.keras.utils import to_categorical
-from misc.keras_helpers import export_h5_to_pb
 from misc.helpers import print_info, print_args, check_dir
+from tensorflow.python.framework import graph_util, graph_io
 from tensorflow.keras.layers import Reshape, Flatten, Dense, Conv2D, MaxPooling2D
+
+def save(model, model_dir):
+  m = os.path.join(model_dir, 'model.h5')
+  print('\nSaving h5 model to {}'.format(m))
+  model.save(m)
+  print('Saving pb model to {}'.format(os.path.join(model_dir, 'digits.pb')))
+
+  
+  input_node = model.input.name.split(':')[0]
+  output_node = model.output.name.split(':')[0]
+  print("Input Tensor:", input_node)
+  print("Output Tensor:", output_node)
+  
+  K.set_learning_phase(0)
+  with K.get_session() as sess:
+    graph = graph_util.convert_variables_to_constants(sess, 
+      sess.graph.as_graph_def(), [output_node])
+    graph_io.write_graph(graph, model_dir, 'digits.pb', as_text=False)
 
 def load_digits(data_dir):
   mnist = tf.keras.datasets.mnist
@@ -53,27 +72,23 @@ def run(data_dir, model_dir, epochs):
   (x_train, y_train), (x_test, y_test) = load_digits(data_dir)
 
   # create model structure
-  model = Sequential([Dense(10)])
+  model = cnn()
 
   # compile model
   model.compile(loss='mse', optimizer='adam', metrics=['accuracy'])
 
   # run model
   model.fit(x_train, y_train, epochs=epochs)
-
   model.summary()
   model.evaluate(x_test, y_test)
 
-  m = os.path.join(model_dir, 'model.h5')
-  print('Saving model to {}'.format(m))
-  model.save(m)
-  print('Saving protocol buffer')
-  export_h5_to_pb(model, model_dir)
+  save(model, model_dir)
+ 
 
 if __name__ == "__main__":
   data_dir = check_dir(os.path.abspath('data'))
   output_dir = os.path.abspath('output')
   unique = datetime.now().strftime('%m.%d_%H.%M')
   model_dir = check_dir(os.path.join(output_dir, 'models', 'model_{}'.format(unique)))
-  epochs = 1
+  epochs = 5
   run(data_dir, model_dir, epochs)
