@@ -5,7 +5,7 @@ from datetime import datetime
 from tensorflow.keras import Sequential
 from tensorflow.keras import backend as K
 from tensorflow.keras.utils import to_categorical
-from misc.helpers import print_info, print_args, check_dir
+from misc.helpers import print_info, print_args, check_dir, info
 from tensorflow.python.framework import graph_util, graph_io
 from tensorflow.keras.layers import Reshape, Flatten, Dense, Conv2D, MaxPooling2D
 
@@ -14,11 +14,10 @@ def save(model, model_dir):
   print('\nSaving h5 model to {}'.format(m))
   model.save(m)
   print('Saving pb model to {}'.format(os.path.join(model_dir, 'digits.pb')))
-
   
   input_node = model.input.name.split(':')[0]
   output_node = model.output.name.split(':')[0]
-  print("Input Tensor:", input_node)
+  print("\nInput Tensor:", input_node)
   print("Output Tensor:", output_node)
   
   K.set_learning_phase(0)
@@ -37,14 +36,11 @@ def load_digits(data_dir):
   return (x_train, y_train), (x_test, y_test)
 
 ###################################################################
-# Simple (W.T * X + b)                                            #
+# shapes                                                          #
 ###################################################################
 def linear():
   return Sequential([Dense(10)])
 
-###################################################################
-# Neural Network                                                  #
-###################################################################
 def mlp():
   return Sequential([
     Dense(512, activation='relu'),
@@ -52,9 +48,6 @@ def mlp():
     Dense(10, activation='softmax')
   ])
 
-###################################################################
-# Convolutional Neural Network                                    #
-###################################################################
 def cnn():
   return Sequential([
     Reshape((28, 28, 1)),
@@ -67,22 +60,31 @@ def cnn():
     Dense(10, activation='softmax')
   ])
 
+
+@print_info
 def run(data_dir, model_dir, epochs):
   # get data
   (x_train, y_train), (x_test, y_test) = load_digits(data_dir)
-
+  
   # create model structure
   model = cnn()
-
+  
   # compile model
   model.compile(loss='mse', optimizer='adam', metrics=['accuracy'])
-
+  
   # run model
   model.fit(x_train, y_train, epochs=epochs)
   model.summary()
-  model.evaluate(x_test, y_test)
-
+  evaluation = model.evaluate(x_test, y_test)
+  
+  # save model
+  info('Output...')
   save(model, model_dir)
+
+  # metrics
+  info('Metrics...')
+  print('Loss:     {}'.format(evaluation[0]))
+  print('Accuracy: {}'.format(evaluation[1]))
  
 
 if __name__ == "__main__":
@@ -90,5 +92,5 @@ if __name__ == "__main__":
   output_dir = os.path.abspath('output')
   unique = datetime.now().strftime('%m.%d_%H.%M')
   model_dir = check_dir(os.path.join(output_dir, 'models', 'model_{}'.format(unique)))
-  epochs = 5
+  epochs = 10
   run(data_dir, model_dir, epochs)

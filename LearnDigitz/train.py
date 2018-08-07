@@ -105,15 +105,14 @@ def linear_better(x, init=tf.zeros):
         return tf.identity(pred, name="prediction")
 
 @print_info
-def mlp_better(x, hidden=[512, 512]):
-    last_output = x
-    for i in range(len(hidden)):
-        # layer n
-        last_output = tf.layers.dense(inputs=last_output, units=hidden[i], activation=tf.nn.relu)
+def mlp_better(x):
+    # hidden layers
+    h1 = tf.layers.dense(inputs=x, units=512, activation=tf.nn.relu)
+    h2 = tf.layers.dense(inputs=h1, units=512, activation=tf.nn.relu)
 
     # output layer
     with tf.name_scope("Model"):
-        pred = tf.layers.dense(inputs=last_output, units=10, activation=tf.nn.softmax)
+        pred = tf.layers.dense(inputs=h2, units=10, activation=tf.nn.softmax)
         return tf.identity(pred, name="prediction")
 
 @print_info
@@ -136,7 +135,7 @@ def cnn_better(x):
     dense = tf.layers.dense(inputs=pool2_flat, units=1024, activation=tf.nn.relu)
     
     with tf.name_scope('Model'):
-        pred = tf.layers.dense(inputs=dense, units=10)
+        pred = tf.layers.dense(inputs=dense, units=10, activation=tf.nn.softmax)
         return tf.identity(pred, name="prediction")
 
 ###################################################################
@@ -168,18 +167,13 @@ def train_model(x, y, cost, optimizer, accuracy, learning_rate, batch_size, epoc
         acc = 0.
         info('Training')
         # epochs to run
-        with trange(epochs, desc="{:<10}".format("Training"), 
-            bar_format='{l_bar}{bar}|{postfix}', 
-            postfix=" acc: 0.0000") as t:
+        with trange(epochs, desc="{:<10}".format("Training"), bar_format='{l_bar}{bar}|{postfix}', postfix=" acc: 0.0000") as t:
             for epoch in t:
                 avg_cost = 0.
                 t.postfix = ' acc: {:.4f}'.format(acc)
                 t.update()
                 # loop over all batches
-                with tqdm(enumerate(digits), 
-                        total=digits.total, 
-                        desc="{:<10}".format("Epoch {}".format(epoch + 1)),
-                        bar_format='{l_bar}{bar}|{postfix}') as progress:
+                with tqdm(enumerate(digits), total=digits.total, desc="{:<10}".format("Epoch {}".format(epoch + 1)), bar_format='{l_bar}{bar}|{postfix}') as progress:
                     for i, (train_x, train_y) in progress:
                         # Run optimization, cost, and summary
                         _, c, summary = sess.run([optimizer, cost, merged_summary_op],
@@ -239,7 +233,7 @@ if __name__ == "__main__":
 
     args.data = check_dir(os.path.abspath(args.data))
     args.output = os.path.abspath(args.output)
-    unique = datetime.now().strftime('%m.%d_%H.%M')    
+    unique = datetime.now().strftime('%m.%d_%H.%M')
     args.log = check_dir(os.path.join(args.output, 'logs', 'log_{}'.format(unique)))
     args.model = check_dir(os.path.join(args.output, 'models', 'model_{}'.format(unique)))
     
