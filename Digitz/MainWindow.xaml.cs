@@ -81,14 +81,15 @@ namespace Digitz
         private void recognizeButton_Click(object sender, RoutedEventArgs e)
         {
             var tensor = GetWrittenDigit(28);
-
+            const string input_node = "x";
+            const string output_node = "Model/prediction";
             using (var graph = new TFGraph())
             {
                 graph.Import(File.ReadAllBytes("digits.pb"));
                 var session = new TFSession(graph);
                 var runner = session.GetRunner();
-                runner.AddInput(graph["x"][0], tensor);
-                runner.Fetch(graph["Model/prediction"][0]);
+                runner.AddInput(graph[input_node][0], tensor);
+                runner.Fetch(graph[output_node][0]);
                 var output = runner.Run();
                 TFTensor result = output[0];
                 float[] p = ((float[][])result.GetValue(true))[0];
