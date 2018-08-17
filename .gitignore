@@ -42,3 +42,6 @@ data/
 packages/
 
 *Digitz_hdi_settings.json
+
+aml_config/
+.amlignore
