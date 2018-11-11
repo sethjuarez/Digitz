@@ -50,7 +50,7 @@ def mlp():
 
 def cnn():
   return Sequential([
-    Reshape((28, 28, 1)),
+    Reshape((28, 28, 1), input_shape=(784, 1)),
     Conv2D(32, [5, 5], padding='same', activation='relu'),
     MaxPooling2D(strides=2),
     Conv2D(64, [5, 5], padding='same', activation='relu'),
